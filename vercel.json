@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/uapi/(.*)",
+      "destination": "https://api.geminigen.ai/uapi/$1"
+    }
+  ]
+}

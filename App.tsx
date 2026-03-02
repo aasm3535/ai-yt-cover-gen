@@ -559,7 +559,7 @@ const App: React.FC = () => {
                                     ),
                                   );
                                 }}
-                                className={`w-14 h-9 rounded-sm border overflow-hidden shadow-lg transition-all flex-shrink-0 bg-black ${
+                                className={`w-14 h-9 rounded-md border overflow-hidden shadow-lg transition-all flex-shrink-0 bg-black ${
                                   i === item.activeVersionIndex
                                     ? "border-white ring-2 ring-white/20 scale-105"
                                     : "border-[#383838] opacity-70 hover:opacity-100 hover:border-zinc-400"

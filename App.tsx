@@ -433,11 +433,12 @@ const App: React.FC = () => {
             {appState === AppState.GENERATING && generatingItemId === null && (
               <div className="w-full flex flex-col gap-3">
                 <div className="text-xs font-medium text-zinc-400 flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
+                  <div className="h-3 w-3 animate-spin rounded-full border-[1.5px] border-zinc-600 border-t-zinc-300"></div>
                   Рендеринг...
                 </div>
-                <div className="aspect-video w-full rounded-lg border border-[#383838] bg-[#252526] shadow-2xl overflow-hidden relative">
+                <div className="aspect-video w-full rounded-lg border border-[#383838] bg-[#252526] shadow-2xl overflow-hidden relative flex items-center justify-center">
                   <div className="absolute inset-0 shiny-skeleton"></div>
+                  <div className="z-10 h-8 w-8 animate-spin rounded-full border-2 border-zinc-500 border-t-zinc-200"></div>
                 </div>
               </div>
             )}
@@ -532,10 +533,7 @@ const App: React.FC = () => {
                   <div className="aspect-video w-full rounded-lg border border-[#383838] bg-[#252526] shadow-xl overflow-hidden relative group/canvas">
                     {isGeneratingThisEdit ? (
                       <div className="absolute inset-0 shiny-skeleton flex items-center justify-center z-10">
-                        <div className="z-20 text-white text-sm font-medium flex items-center gap-2 bg-black/60 px-4 py-2 rounded-full border border-[#383838]">
-                          <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
-                          Рендеринг версии...
-                        </div>
+                        <div className="z-20 h-8 w-8 animate-spin rounded-full border-2 border-zinc-500 border-t-zinc-200"></div>
                       </div>
                     ) : (
                       <>

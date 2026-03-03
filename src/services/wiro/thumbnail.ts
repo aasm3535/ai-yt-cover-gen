@@ -5,7 +5,7 @@ import { ThumbnailStyle } from "../../types";
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export interface GenerateWiroThumbnailOptions {
-  imageFile: File;
+  imageFile?: File | null;
   topic: string;
   style: ThumbnailStyle;
   model: WiroModel;
@@ -38,17 +38,34 @@ export const generateWiroThumbnail = async ({
 
   const client = new WiroClient({ apiKey, apiSecret });
 
+  const basePrompt = imageFile
+    ? "Create a high-quality YouTube thumbnail based on the attached image."
+    : "Create a high-quality YouTube thumbnail from scratch.";
+
+  const instructions = imageFile
+    ? `1. Use the person or main subject from the provided image.
+    2. Transform the background and lighting to match the requested style.
+    3. The image should be eye-catching, high resolution, and suitable for a YouTube cover.
+    4. Make it look like a professional YouTuber's thumbnail.`
+    : `1. Create an eye-catching, high-resolution background and composition suitable for a YouTube cover.
+    2. Match the requested style and topic.
+    3. Make it look like a professional YouTuber's thumbnail without a specific person in the foreground.`;
+
   const prompt = `
-    Create a high-quality YouTube thumbnail based on the attached image.
+    ${basePrompt}
 
     Context/Topic of the video: "${topic}".
     Visual Style Requirements: ${style}.
-    ${additionalPrompt ? `\n    ADDITIONAL USER EDITS/INSTRUCTIONS:\n    ${additionalPrompt}\n` : ""}
+    ${
+      additionalPrompt
+        ? `
+    ADDITIONAL USER EDITS/INSTRUCTIONS:
+    ${additionalPrompt}
+`
+        : ""
+    }
     Instructions:
-    1. Use the person or main subject from the provided image.
-    2. Transform the background and lighting to match the requested style.
-    3. The image should be eye-catching, high resolution, and suitable for a YouTube cover.
-    4. Make it look like a professional YouTuber's thumbnail.
+    ${instructions}
   `.trim();
 
   console.log(`=== Запуск генерации превью через Wiro (${model}) ===`);
@@ -57,7 +74,7 @@ export const generateWiroThumbnail = async ({
     // 1. Start Task
     onProgress?.(10);
     const runResponse = await client.runTask(model, {
-      inputImage: imageFile,
+      inputImage: imageFile || undefined,
       prompt,
       aspectRatio,
       resolution,

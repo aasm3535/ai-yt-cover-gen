@@ -73,7 +73,7 @@ const UploadZone: React.FC<UploadZoneProps> = ({
           ${
             previewUrl
               ? "border-[#383838] bg-[#1e1e1e] p-1"
-              : "h-48 cursor-pointer border-[#383838] bg-[#1e1e1e] hover:bg-[#2d2d2d]"
+              : "h-28 cursor-pointer border-[#383838] bg-[#1e1e1e] hover:bg-[#2d2d2d]"
           }
           ${isDragging && !previewUrl ? "border-zinc-500 bg-[#2d2d2d]" : ""}
         `}
@@ -128,30 +128,29 @@ const UploadZone: React.FC<UploadZoneProps> = ({
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center pt-5 pb-6 text-zinc-400">
+          <div className="flex flex-col items-center justify-center py-4 text-zinc-400">
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
+              width="20"
+              height="20"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="mb-3 h-8 w-8 text-zinc-500"
+              className="mb-2 text-zinc-500"
             >
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
               <polyline points="17 8 12 3 7 8" />
               <line x1="12" x2="12" y1="3" y2="15" />
             </svg>
-            <p className="mb-1 text-sm">
+            <p className="text-xs">
               <span className="font-semibold text-zinc-200">
-                Нажмите для загрузки
-              </span>{" "}
-              или перетащите файл
+                Загрузить фото
+              </span>
             </p>
-            <p className="text-xs text-zinc-500">JPG, PNG (Максимум 5МБ)</p>
+            <p className="text-[10px] text-zinc-500 mt-1">Перетащите или нажмите</p>
           </div>
         )}
       </div>

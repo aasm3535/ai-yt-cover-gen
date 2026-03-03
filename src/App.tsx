@@ -25,7 +25,7 @@ interface HistoryItem {
   topic: string;
   style: string;
   styleEnum: ThumbnailStyle;
-  file: File;
+  file: File | null;
   versions: Version[];
   activeVersionIndex: number;
 }
@@ -34,6 +34,7 @@ const App: React.FC = () => {
   const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
   const [topic, setTopic] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [usePersonPhoto, setUsePersonPhoto] = useState<boolean>(true);
   const [selectedStyle, setSelectedStyle] = useState<ThumbnailStyle>(
     ThumbnailStyle.CLICKBAIT,
   );
@@ -76,8 +77,11 @@ const App: React.FC = () => {
   };
 
   const handleGenerate = async () => {
-    if (!selectedFile || !topic) {
-      setErrorMsg("Пожалуйста, укажите тему и загрузите фото.");
+    if (!topic || (usePersonPhoto && !selectedFile)) {
+      setErrorMsg(
+        "Пожалуйста, укажите тему" +
+          (usePersonPhoto ? " и загрузите фото." : "."),
+      );
       return;
     }
 
@@ -87,7 +91,7 @@ const App: React.FC = () => {
 
     try {
       const url = await generateWiroThumbnail({
-        imageFile: selectedFile,
+        imageFile: usePersonPhoto ? selectedFile : null,
         topic,
         style: selectedStyle,
         model: selectedModel,
@@ -100,7 +104,7 @@ const App: React.FC = () => {
             topic,
             style: styleTranslations[selectedStyle],
             styleEnum: selectedStyle,
-            file: selectedFile,
+            file: usePersonPhoto ? selectedFile : null,
             versions: [
               {
                 id: Date.now().toString(),
@@ -195,13 +199,13 @@ const App: React.FC = () => {
     }
   };
 
-  
   const handleSwitchModelGenerate = async (item: HistoryItem) => {
     const currentVersion = item.versions[item.activeVersionIndex];
     const currentModel = currentVersion.model || "google/nano-banana-pro";
-    const otherModel: WiroModel = currentModel === "google/nano-banana-pro"
-      ? "google/nano-banana-2"
-      : "google/nano-banana-pro";
+    const otherModel: WiroModel =
+      currentModel === "google/nano-banana-pro"
+        ? "google/nano-banana-2"
+        : "google/nano-banana-pro";
 
     setAppState(AppState.GENERATING);
     setGeneratingItemId(item.id);
@@ -238,11 +242,13 @@ const App: React.FC = () => {
               };
             }
             return h;
-          })
+          }),
         );
         setAppState(AppState.SUCCESS);
       } else {
-        throw new Error("ИИ вернул ответ, но изображение не было сгенерировано.");
+        throw new Error(
+          "ИИ вернул ответ, но изображение не было сгенерировано.",
+        );
       }
     } catch (err: any) {
       console.error(err);
@@ -344,27 +350,11 @@ const App: React.FC = () => {
   return (
     <div className="h-screen w-screen overflow-hidden bg-[#1e1e1e] flex font-sans text-zinc-50 antialiased selection:bg-zinc-700 selection:text-zinc-50">
       {/* Sidebar - Design Panel */}
-      <aside className="w-80 lg:w-96 flex-shrink-0 bg-[#252526] border-r border-[#383838] flex flex-col z-20 shadow-xl relative">
-        <div className="h-14 flex items-center px-6 border-b border-[#383838] flex-shrink-0">
+      <aside className="w-72 flex-shrink-0 bg-[#252526] border-r border-[#383838] flex flex-col z-20 shadow-xl relative">
+        <div className="h-14 flex items-center px-5 border-b border-[#383838] flex-shrink-0">
           <div className="flex items-center gap-2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-5 w-5 text-zinc-50"
-            >
-              <rect width="20" height="14" x="2" y="5" rx="2" />
-              <polygon points="10 9 15 12 10 15 10 9" />
-            </svg>
             <span className="font-semibold tracking-tight text-zinc-50">
-              TubeGenie
-            </span>
-            <span className="ml-2 text-[10px] font-medium px-1.5 py-0.5 bg-[#383838] text-zinc-300 rounded-md">
-              DESIGN
+              Настройки
             </span>
           </div>
         </div>
@@ -387,15 +377,45 @@ const App: React.FC = () => {
                 id="topic"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
-                placeholder="Например, 24 часа в заброшенном доме"
+                placeholder="Например, 24 часа..."
                 className="flex h-9 w-full rounded-md border border-[#383838] bg-[#1e1e1e] px-3 py-1 text-sm text-zinc-50 placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-400 transition-all"
               />
             </div>
 
-            <UploadZone
-              onFileSelect={setSelectedFile}
-              selectedFile={selectedFile}
-            />
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-zinc-300">
+                Режим генерации
+              </label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setUsePersonPhoto(true)}
+                  className={`flex-1 rounded-md border py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-400 ${
+                    usePersonPhoto
+                      ? "border-zinc-500 bg-[#383838] text-zinc-50"
+                      : "border-[#383838] bg-transparent text-zinc-400 hover:bg-[#2d2d2d] hover:text-zinc-200"
+                  }`}
+                >
+                  С фото человека
+                </button>
+                <button
+                  onClick={() => setUsePersonPhoto(false)}
+                  className={`flex-1 rounded-md border py-2 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-400 ${
+                    !usePersonPhoto
+                      ? "border-zinc-500 bg-[#383838] text-zinc-50"
+                      : "border-[#383838] bg-transparent text-zinc-400 hover:bg-[#2d2d2d] hover:text-zinc-200"
+                  }`}
+                >
+                  Только фон
+                </button>
+              </div>
+            </div>
+
+            {usePersonPhoto && (
+              <UploadZone
+                onFileSelect={setSelectedFile}
+                selectedFile={selectedFile}
+              />
+            )}
           </div>
 
           <div className="space-y-4">

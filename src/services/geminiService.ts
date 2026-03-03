@@ -47,16 +47,9 @@ export const generateThumbnail = async (
   formData.append("resolution", resolution);
   formData.append("files", imageFile);
 
-  console.log("=== Запуск генерации превью ===");
-  console.log("URL:", url);
-  console.log("Тема видео:", topic);
-
   try {
     const response = await axios.post(url, formData, { headers });
     let data = response.data;
-
-    console.log("=== Ответ от API получен ===");
-    console.log("Данные:", data);
 
     if (data.status === 3) {
       throw new Error(
@@ -67,7 +60,6 @@ export const generateThumbnail = async (
 
     // Если статус 0 или 1 (в процессе/в очереди), начинаем поллинг
     if ((data.status === 0 || data.status === 1) && data.uuid) {
-      console.log("⏳ Изображение генерируется, начинаем опрос статуса...");
       if (data.status_percentage !== undefined) {
         onProgress?.(data.status_percentage);
       }
@@ -83,11 +75,6 @@ export const generateThumbnail = async (
         try {
           const historyResponse = await axios.get(historyUrl, { headers });
           data = historyResponse.data;
-          console.log(
-            `Попытка ${attempts}, статус:`,
-            data.status,
-            data.status_percentage + "%",
-          );
 
           if (data.status_percentage !== undefined) {
             onProgress?.(data.status_percentage);
@@ -99,7 +86,6 @@ export const generateThumbnail = async (
             );
           }
         } catch (pollError: any) {
-          console.warn("Ошибка при опросе статуса, продолжаем...", pollError);
           // Если мы выбросили ошибку (например, статус 3), нужно прервать поллинг
           if (data.status === 3) {
             throw pollError;
@@ -134,22 +120,14 @@ export const generateThumbnail = async (
         (data.images && data.images[0]) ||
         (data.output && data.output[0]);
 
-      console.log("✅ Успешно! Ссылка на изображение:", finalUrl);
       if (!finalUrl) {
-        console.log(
-          "⚠️ Внимание: Ссылка не найдена. Полные данные ответа:",
-          data,
-        );
       }
       return finalUrl || null;
     }
 
     return null;
   } catch (error: any) {
-    console.error("❌ Ошибка при запросе к API:", error);
-
     if (axios.isAxiosError(error)) {
-      console.error("Детали ошибки Axios:", error.response?.data);
       throw new Error(
         error.response?.data?.error_message ||
           error.response?.data?.message ||

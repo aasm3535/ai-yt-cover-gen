@@ -125,7 +125,6 @@ const App: React.FC = () => {
         );
       }
     } catch (err: any) {
-      console.error(err);
       if (err.message && err.message.includes("401")) {
         setHasApiKey(false);
         toast.error(
@@ -186,7 +185,6 @@ const App: React.FC = () => {
         );
       }
     } catch (err: any) {
-      console.error(err);
       if (err.message && err.message.includes("401")) {
         setHasApiKey(false);
         toast.error("Сессия API ключа истекла или он недействителен.");
@@ -252,7 +250,6 @@ const App: React.FC = () => {
         );
       }
     } catch (err: any) {
-      console.error(err);
       if (err.message && err.message.includes("401")) {
         setHasApiKey(false);
         toast.error("Сессия API ключа истекла или он недействителен.");
@@ -279,7 +276,6 @@ const App: React.FC = () => {
       document.body.removeChild(link);
       URL.revokeObjectURL(blobUrl);
     } catch (error) {
-      console.error("Error downloading image:", error);
       window.open(url, "_blank");
     }
   };

@@ -68,8 +68,6 @@ export const generateWiroThumbnail = async ({
     ${instructions}
   `.trim();
 
-  console.log(`=== Запуск генерации превью через Wiro (${model}) ===`);
-
   try {
     // 1. Start Task
     onProgress?.(10);
@@ -89,7 +87,6 @@ export const generateWiroThumbnail = async ({
     }
 
     const taskId = runResponse.taskid;
-    console.log(`⏳ Задача ${taskId} запущена, начинаем опрос статуса...`);
 
     // 2. Poll for Completion
     let attempts = 0;
@@ -113,7 +110,6 @@ export const generateWiroThumbnail = async ({
       }
 
       const task = detailResponse.tasklist[0];
-      console.log(`Попытка ${attempts}, статус: ${task.status}`);
 
       // Map task status to rough progress for UI feedback
       switch (task.status) {
@@ -146,15 +142,12 @@ export const generateWiroThumbnail = async ({
       }
 
       if (task.status === "task_postprocess_end") {
-        console.log("Финальные данные задачи:", task);
-
         // Handle specific API failure in debug output
         if (task.debugoutput && task.debugoutput.includes("Task failed")) {
           throw new Error(
             "Модель отклонила генерацию. Возможно, сработал фильтр безопасности (попробуйте изменить фото или промпт).",
           );
         }
-        console.log("Финальные данные задачи:", task);
         let outputs = task.outputs;
         if (typeof outputs === "string") {
           try {
@@ -167,7 +160,6 @@ export const generateWiroThumbnail = async ({
           output?.url || (task as any).image_url || (task as any).result_url;
 
         if (imageUrl) {
-          console.log("✅ Успешно! Ссылка на изображение:", imageUrl);
           return imageUrl;
         } else {
           throw new Error(
@@ -179,7 +171,6 @@ export const generateWiroThumbnail = async ({
 
     throw new Error("Превышено время ожидания генерации изображения");
   } catch (error: any) {
-    console.error("❌ Ошибка при запросе к Wiro API:", error);
     throw error;
   }
 };

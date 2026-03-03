@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Button from "./components/Button";
 import UploadZone from "./components/UploadZone";
 import { ThumbnailStyle, AppState } from "./types";
-import { generateThumbnail } from "./services/geminiService";
+import { generateWiroThumbnail, WiroModel, Resolution } from "./services/wiro";
 
 const styleTranslations: Record<ThumbnailStyle, string> = {
   [ThumbnailStyle.MINIMALIST]: "Минимализм и чистота",
@@ -17,6 +17,7 @@ interface Version {
   url: string;
   prompt?: string;
   timestamp: number;
+  model?: WiroModel;
 }
 
 interface HistoryItem {
@@ -36,7 +37,10 @@ const App: React.FC = () => {
   const [selectedStyle, setSelectedStyle] = useState<ThumbnailStyle>(
     ThumbnailStyle.CLICKBAIT,
   );
-  const [resolution, setResolution] = useState<string>("1K");
+  const [resolution, setResolution] = useState<Resolution>("1K");
+  const [selectedModel, setSelectedModel] = useState<WiroModel>(
+    "google/nano-banana-pro",
+  );
   const [appState, setAppState] = useState<AppState>(AppState.IDLE);
 
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -50,8 +54,11 @@ const App: React.FC = () => {
   useEffect(() => {
     const checkKey = async () => {
       const apiKey =
-        (window as any).GEMINI_API_KEY || process.env.GEMINI_API_KEY;
-      if (apiKey) {
+        (window as any).WIRO_API_KEY || import.meta.env?.VITE_WIRO_API_KEY;
+      const apiSecret =
+        (window as any).WIRO_API_SECRET ||
+        import.meta.env?.VITE_WIRO_API_SECRET;
+      if (apiKey && apiSecret) {
         setHasApiKey(true);
       } else {
         setHasApiKey(false);
@@ -60,9 +67,10 @@ const App: React.FC = () => {
     checkKey();
   }, []);
 
-  const handleSaveKey = (key: string) => {
-    if (key.trim().length > 0) {
-      (window as any).GEMINI_API_KEY = key;
+  const handleSaveKey = (key: string, secret: string) => {
+    if (key.trim() && secret.trim()) {
+      (window as any).WIRO_API_KEY = key;
+      (window as any).WIRO_API_SECRET = secret;
       setHasApiKey(true);
     }
   };
@@ -78,12 +86,13 @@ const App: React.FC = () => {
     setErrorMsg(null);
 
     try {
-      const url = await generateThumbnail(
-        selectedFile,
+      const url = await generateWiroThumbnail({
+        imageFile: selectedFile,
         topic,
-        selectedStyle,
+        style: selectedStyle,
+        model: selectedModel,
         resolution,
-      );
+      });
       if (url) {
         setHistory((prev) => [
           {
@@ -97,6 +106,7 @@ const App: React.FC = () => {
                 id: Date.now().toString(),
                 url,
                 timestamp: Date.now(),
+                model: selectedModel,
               },
             ],
             activeVersionIndex: 0,
@@ -133,14 +143,14 @@ const App: React.FC = () => {
     setErrorMsg(null);
 
     try {
-      const url = await generateThumbnail(
-        item.file,
-        item.topic,
-        item.styleEnum,
+      const url = await generateWiroThumbnail({
+        imageFile: item.file,
+        topic: item.topic,
+        style: item.styleEnum,
+        model: selectedModel,
         resolution,
-        undefined,
-        editPrompt,
-      );
+        additionalPrompt: editPrompt,
+      });
       if (url) {
         setHistory((prev) =>
           prev.map((h) => {
@@ -154,6 +164,7 @@ const App: React.FC = () => {
                     url,
                     timestamp: Date.now(),
                     prompt: editPrompt,
+                    model: selectedModel,
                   },
                 ],
                 activeVersionIndex: h.versions.length,
@@ -184,6 +195,70 @@ const App: React.FC = () => {
     }
   };
 
+  
+  const handleSwitchModelGenerate = async (item: HistoryItem) => {
+    const currentVersion = item.versions[item.activeVersionIndex];
+    const currentModel = currentVersion.model || "google/nano-banana-pro";
+    const otherModel: WiroModel = currentModel === "google/nano-banana-pro"
+      ? "google/nano-banana-2"
+      : "google/nano-banana-pro";
+
+    setAppState(AppState.GENERATING);
+    setGeneratingItemId(item.id);
+    setOpenMenuId(null);
+    setErrorMsg(null);
+
+    try {
+      const url = await generateWiroThumbnail({
+        imageFile: item.file,
+        topic: item.topic,
+        style: item.styleEnum,
+        model: otherModel,
+        resolution,
+        additionalPrompt: currentVersion.prompt,
+      });
+
+      if (url) {
+        setHistory((prev) =>
+          prev.map((h) => {
+            if (h.id === item.id) {
+              return {
+                ...h,
+                versions: [
+                  ...h.versions,
+                  {
+                    id: Date.now().toString(),
+                    url,
+                    timestamp: Date.now(),
+                    prompt: currentVersion.prompt,
+                    model: otherModel,
+                  },
+                ],
+                activeVersionIndex: h.versions.length,
+              };
+            }
+            return h;
+          })
+        );
+        setAppState(AppState.SUCCESS);
+      } else {
+        throw new Error("ИИ вернул ответ, но изображение не было сгенерировано.");
+      }
+    } catch (err: any) {
+      console.error(err);
+      if (err.message && err.message.includes("401")) {
+        setHasApiKey(false);
+        setErrorMsg("Сессия API ключа истекла или он недействителен.");
+        setAppState(AppState.IDLE);
+        return;
+      }
+      setAppState(AppState.ERROR);
+      setErrorMsg(err.message || "Что-то пошло не так при генерации.");
+    } finally {
+      setGeneratingItemId(null);
+    }
+  };
+
   const handleDownload = (url: string) => {
     const link = document.createElement("a");
     link.href = url;
@@ -203,9 +278,8 @@ const App: React.FC = () => {
                 Авторизация
               </h1>
               <p className="text-sm text-zinc-400">
-                Приложение использует модель{" "}
-                <strong>Nano Banana Pro (4K)</strong>. Укажите ваш API ключ
-                GeminiGen для продолжения.
+                Приложение использует модель <strong>TubeGenie AI</strong>.
+                Укажите ваши API Key и API Secret.
               </p>
             </div>
 
@@ -213,15 +287,27 @@ const App: React.FC = () => {
               onSubmit={(e) => {
                 e.preventDefault();
                 const formData = new FormData(e.currentTarget);
-                handleSaveKey(formData.get("apiKey") as string);
+                handleSaveKey(
+                  formData.get("apiKey") as string,
+                  formData.get("apiSecret") as string,
+                );
               }}
               className="space-y-4"
             >
               <div className="space-y-2">
                 <input
                   name="apiKey"
+                  type="text"
+                  placeholder="TubeGenie API Key"
+                  required
+                  className="flex h-10 w-full rounded-md border border-zinc-700 bg-[#1e1e1e] px-3 py-2 text-sm text-zinc-50 placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-400"
+                />
+              </div>
+              <div className="space-y-2">
+                <input
+                  name="apiSecret"
                   type="password"
-                  placeholder="Ваш x-api-key"
+                  placeholder="TubeGenie API Secret"
                   required
                   className="flex h-10 w-full rounded-md border border-zinc-700 bg-[#1e1e1e] px-3 py-2 text-sm text-zinc-50 placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-400"
                 />
@@ -233,7 +319,7 @@ const App: React.FC = () => {
             <div className="text-sm text-zinc-500">
               Нет ключа?{" "}
               <a
-                href="https://geminigen.ai/"
+                href="https://wiro.ai/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-medium text-zinc-300 underline underline-offset-4 hover:text-zinc-50 transition-colors"
@@ -310,6 +396,33 @@ const App: React.FC = () => {
               onFileSelect={setSelectedFile}
               selectedFile={selectedFile}
             />
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+              Модель
+            </h3>
+            <div className="flex gap-2">
+              {[
+                { id: "google/nano-banana-2", label: "Nano 2" },
+                { id: "google/nano-banana-pro", label: "Pro" },
+              ].map((m) => (
+                <button
+                  key={m.id}
+                  onClick={() => setSelectedModel(m.id as WiroModel)}
+                  className={`
+                    flex-1 rounded-md border py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-400
+                    ${
+                      selectedModel === m.id
+                        ? "border-zinc-500 bg-[#383838] text-zinc-50"
+                        : "border-[#383838] bg-transparent text-zinc-400 hover:bg-[#2d2d2d] hover:text-zinc-200"
+                    }
+                  `}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -438,7 +551,6 @@ const App: React.FC = () => {
                 </div>
                 <div className="aspect-video w-full rounded-lg border border-[#383838] bg-[#252526] shadow-2xl overflow-hidden relative flex items-center justify-center">
                   <div className="absolute inset-0 shiny-skeleton"></div>
-                  <div className="z-10 h-8 w-8 animate-spin rounded-full border-2 border-zinc-500 border-t-zinc-200"></div>
                 </div>
               </div>
             )}
@@ -451,7 +563,10 @@ const App: React.FC = () => {
               return (
                 <div key={item.id} className="w-full flex flex-col gap-3 group">
                   <div className="text-xs font-medium text-zinc-500 flex items-center justify-between">
-                    <span>
+                    <span className="flex items-center gap-2">
+                      {isGeneratingThisEdit && (
+                        <div className="h-3 w-3 animate-spin rounded-full border-[1.5px] border-zinc-600 border-t-zinc-300"></div>
+                      )}
                       Фрейм {history.length - index} •{" "}
                       {new Date(currentVersion.timestamp).toLocaleTimeString(
                         [],
@@ -532,9 +647,7 @@ const App: React.FC = () => {
 
                   <div className="aspect-video w-full rounded-lg border border-[#383838] bg-[#252526] shadow-xl overflow-hidden relative group/canvas">
                     {isGeneratingThisEdit ? (
-                      <div className="absolute inset-0 shiny-skeleton flex items-center justify-center z-10">
-                        <div className="z-20 h-8 w-8 animate-spin rounded-full border-2 border-zinc-500 border-t-zinc-200"></div>
-                      </div>
+                      <div className="absolute inset-0 shiny-skeleton z-10"></div>
                     ) : (
                       <>
                         <img

@@ -147,6 +147,14 @@ export const generateWiroThumbnail = async ({
 
       if (task.status === "task_postprocess_end") {
         console.log("Финальные данные задачи:", task);
+
+        // Handle specific API failure in debug output
+        if (task.debugoutput && task.debugoutput.includes("Task failed")) {
+          throw new Error(
+            "Модель отклонила генерацию. Возможно, сработал фильтр безопасности (попробуйте изменить фото или промпт).",
+          );
+        }
+        console.log("Финальные данные задачи:", task);
         let outputs = task.outputs;
         if (typeof outputs === "string") {
           try {
@@ -163,8 +171,7 @@ export const generateWiroThumbnail = async ({
           return imageUrl;
         } else {
           throw new Error(
-            "Задача завершена, но ссылка не найдена. Ответ: " +
-              JSON.stringify(task),
+            "Задача завершена, но ссылка не найдена. Скорее всего, сработал фильтр безопасности API.",
           );
         }
       }

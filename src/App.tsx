@@ -441,7 +441,7 @@ const App: React.FC = () => {
                   key={m.id}
                   onClick={() => setSelectedModel(m.id as WiroModel)}
                   className={`
-                    relative flex-1 rounded-md border py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-400
+                    flex items-center justify-center flex-1 rounded-md border py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-400
                     ${
                       selectedModel === m.id
                         ? "border-zinc-500 bg-[#383838] text-zinc-50"
@@ -449,12 +449,12 @@ const App: React.FC = () => {
                     }
                   `}
                 >
+                  {m.label}
                   {m.badge && (
-                    <span className="absolute -top-2.5 -right-2 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] font-bold px-1.5 py-0.5 rounded-sm shadow-[0_0_10px_rgba(16,185,129,0.2)]">
+                    <span className="ml-1.5 inline-flex items-center rounded bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-400 ring-1 ring-inset ring-emerald-500/20">
                       {m.badge}
                     </span>
                   )}
-                  {m.label}
                 </button>
               ))}
             </div>

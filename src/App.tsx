@@ -434,14 +434,14 @@ const App: React.FC = () => {
             </h3>
             <div className="flex gap-2">
               {[
-                { id: "google/nano-banana-2", label: "Nano 2", badge: "HOT" },
+                { id: "google/nano-banana-2", label: "Nano 2" },
                 { id: "google/nano-banana-pro", label: "Pro" },
               ].map((m) => (
                 <button
                   key={m.id}
                   onClick={() => setSelectedModel(m.id as WiroModel)}
                   className={`
-                    flex items-center justify-center flex-1 rounded-md border py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-400
+                    flex-1 rounded-md border py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-zinc-400
                     ${
                       selectedModel === m.id
                         ? "border-zinc-500 bg-[#383838] text-zinc-50"
@@ -450,11 +450,6 @@ const App: React.FC = () => {
                   `}
                 >
                   {m.label}
-                  {m.badge && (
-                    <span className="ml-1.5 inline-flex items-center rounded bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-400 ring-1 ring-inset ring-emerald-500/20">
-                      {m.badge}
-                    </span>
-                  )}
                 </button>
               ))}
             </div>

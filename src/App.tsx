@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Toaster, toast } from "sonner";
 import Button from "./components/Button";
 import UploadZone from "./components/UploadZone";
 import { ThumbnailStyle, AppState } from "./types";
@@ -45,7 +46,6 @@ const App: React.FC = () => {
   const [appState, setAppState] = useState<AppState>(AppState.IDLE);
 
   const [history, setHistory] = useState<HistoryItem[]>([]);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -79,7 +79,7 @@ const App: React.FC = () => {
 
   const handleGenerate = async () => {
     if (!topic || (usePersonPhoto && !selectedFile)) {
-      setErrorMsg(
+      toast.error(
         "Пожалуйста, укажите тему" +
           (usePersonPhoto ? " и загрузите фото." : "."),
       );
@@ -88,7 +88,6 @@ const App: React.FC = () => {
 
     setAppState(AppState.GENERATING);
     setGeneratingItemId(null);
-    setErrorMsg(null);
 
     try {
       const url = await generateWiroThumbnail({
@@ -119,6 +118,7 @@ const App: React.FC = () => {
           ...prev,
         ]);
         setAppState(AppState.SUCCESS);
+        toast.success("Изображение успешно сгенерировано!");
       } else {
         throw new Error(
           "ИИ вернул ответ, но изображение не было сгенерировано. Попробуйте другой промпт или изображение.",
@@ -128,14 +128,14 @@ const App: React.FC = () => {
       console.error(err);
       if (err.message && err.message.includes("401")) {
         setHasApiKey(false);
-        setErrorMsg(
+        toast.error(
           "Сессия API ключа истекла или он недействителен. Пожалуйста, выберите ключ заново.",
         );
         setAppState(AppState.IDLE);
         return;
       }
       setAppState(AppState.ERROR);
-      setErrorMsg(err.message || "Что-то пошло не так при генерации.");
+      toast.error(err.message || "Что-то пошло не так при генерации.");
     }
   };
 
@@ -145,7 +145,6 @@ const App: React.FC = () => {
     setAppState(AppState.GENERATING);
     setGeneratingItemId(item.id);
     setEditingId(null);
-    setErrorMsg(null);
 
     try {
       const url = await generateWiroThumbnail({
@@ -179,6 +178,7 @@ const App: React.FC = () => {
           }),
         );
         setAppState(AppState.SUCCESS);
+        toast.success("Изображение успешно сгенерировано!");
         setEditPrompt("");
       } else {
         throw new Error(
@@ -189,12 +189,12 @@ const App: React.FC = () => {
       console.error(err);
       if (err.message && err.message.includes("401")) {
         setHasApiKey(false);
-        setErrorMsg("Сессия API ключа истекла или он недействителен.");
+        toast.error("Сессия API ключа истекла или он недействителен.");
         setAppState(AppState.IDLE);
         return;
       }
       setAppState(AppState.ERROR);
-      setErrorMsg(err.message || "Что-то пошло не так при редактировании.");
+      toast.error(err.message || "Что-то пошло не так при редактировании.");
     } finally {
       setGeneratingItemId(null);
     }
@@ -211,7 +211,6 @@ const App: React.FC = () => {
     setAppState(AppState.GENERATING);
     setGeneratingItemId(item.id);
     setOpenMenuId(null);
-    setErrorMsg(null);
 
     try {
       const url = await generateWiroThumbnail({
@@ -246,6 +245,7 @@ const App: React.FC = () => {
           }),
         );
         setAppState(AppState.SUCCESS);
+        toast.success("Изображение успешно сгенерировано!");
       } else {
         throw new Error(
           "ИИ вернул ответ, но изображение не было сгенерировано.",
@@ -255,12 +255,12 @@ const App: React.FC = () => {
       console.error(err);
       if (err.message && err.message.includes("401")) {
         setHasApiKey(false);
-        setErrorMsg("Сессия API ключа истекла или он недействителен.");
+        toast.error("Сессия API ключа истекла или он недействителен.");
         setAppState(AppState.IDLE);
         return;
       }
       setAppState(AppState.ERROR);
-      setErrorMsg(err.message || "Что-то пошло не так при генерации.");
+      toast.error(err.message || "Что-то пошло не так при генерации.");
     } finally {
       setGeneratingItemId(null);
     }
@@ -534,11 +534,6 @@ const App: React.FC = () => {
               ? "Рендеринг..."
               : "Сгенерировать"}
           </Button>
-          {errorMsg && (
-            <div className="mt-3 rounded-md border border-red-900/50 bg-red-950/30 p-2.5 text-xs text-red-400 leading-relaxed">
-              {errorMsg}
-            </div>
-          )}
         </div>
       </aside>
 
@@ -876,8 +871,19 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
+
+      <Toaster
+        theme="dark"
+        position="bottom-right"
+        toastOptions={{
+          style: {
+            background: "#252526",
+            borderColor: "#383838",
+            color: "#fafafa",
+          },
+        }}
+      />
     </div>
   );
 };
-
 export default App;

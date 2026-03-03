@@ -33,7 +33,7 @@ interface WiroCredentials {
 export class WiroClient {
   private apiKey: string;
   private apiSecret: string;
-  private baseUrl = 'https://api.wiro.ai/v1';
+  private baseUrl = '/wiro-api';
 
   constructor(credentials: WiroCredentials) {
     this.apiKey = credentials.apiKey;

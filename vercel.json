@@ -1,8 +1,12 @@
 {
   "rewrites": [
     {
-      "source": "/uapi/(.*)",
-      "destination": "https://api.geminigen.ai/uapi/$1"
+      "source": "/wiro-api/(.*)",
+      "destination": "https://api.wiro.ai/v1/"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }

@@ -1,8 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/wiro-api/(.*)",
-      "destination": "https://api.wiro.ai/v1/"
+      "source": "/wiro-api/:path*",
+      "destination": "https://api.wiro.ai/v1/:path*"
     },
     {
       "source": "/(.*)",

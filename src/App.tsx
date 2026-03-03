@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import Button from "./components/Button";
 import UploadZone from "./components/UploadZone";
 import { ThumbnailStyle, AppState } from "./types";
@@ -265,13 +266,22 @@ const App: React.FC = () => {
     }
   };
 
-  const handleDownload = (url: string) => {
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `thumbnail-${Date.now()}.jpg`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownload = async (url: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `thumbnail-${Date.now()}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Error downloading image:", error);
+      window.open(url, '_blank');
+    }
   };
 
   if (hasApiKey === false) {
@@ -533,7 +543,18 @@ const App: React.FC = () => {
       </aside>
 
       {/* Canvas Area */}
-      <main className="flex-1 relative overflow-auto custom-scrollbar canvas-bg z-10">
+      <main className="flex-1 relative overflow-hidden canvas-bg z-10 cursor-grab active:cursor-grabbing">
+      <TransformWrapper
+        initialScale={1}
+        minScale={0.1}
+        maxScale={5}
+        centerOnInit={true}
+        wheel={{ step: 0.1 }}
+      >
+        <TransformComponent
+          wrapperStyle={{ width: "100%", height: "100%" }}
+          contentStyle={{ width: "100%", height: "100%", minHeight: "100%" }}
+        >
         <div className="min-h-full min-w-full p-12 md:p-24 flex flex-col items-center">
           {appState === AppState.IDLE && history.length === 0 && (
             <div className="m-auto flex flex-col items-center justify-center text-zinc-500 max-w-sm text-center space-y-4">
@@ -782,7 +803,9 @@ const App: React.FC = () => {
             })}
           </div>
         </div>
-      </main>
+              </TransformComponent>
+      </TransformWrapper>
+    </main>
 
       {/* Global CSS injections for custom UI scrollbars and canvas background */}
       <style

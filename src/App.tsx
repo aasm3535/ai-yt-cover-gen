@@ -514,7 +514,9 @@ const App: React.FC = () => {
           <Button
             onClick={handleGenerate}
             disabled={
-              !topic || !selectedFile || appState === AppState.GENERATING
+              !topic ||
+              (usePersonPhoto && !selectedFile) ||
+              appState === AppState.GENERATING
             }
             className="w-full h-10 shadow-sm"
           >
